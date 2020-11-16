@@ -12,13 +12,8 @@
 
 #include <unistd.h>
 #include <iostream>
-
+#include <cstdio>
 #include <cerrno>
-#ifdef EINTR
-#  define IS_EINTR(x) ((x) == EINTR)
-#else
-#  define IS_EINTR(x) 0
-#endif
 
 #include <iterator>
 #include <regex>
@@ -59,7 +54,7 @@ gInfo = {
 /**
 * read specific sized byte from stdin
 * @par DESCRIPTION
-*   <<解説記入>>
+*   read from stdin
 *
 * @return count of received byte or error code
 **/
@@ -68,9 +63,8 @@ ssize_t
 full_read(void *buf, size_t count)
 {
     size_t total = 0;
-    char *ptr = reinterpret_cast<char *>(buf);
 
-    total = fread(ptr, 1, count, stdin);
+    total = fread(buf, 1, count, stdin);
     if (total < count) {
         return feof(stdin) ? 0 : -1;
     }
@@ -82,7 +76,7 @@ full_read(void *buf, size_t count)
 /**
 * write specific sized byte to stdout
 * @par DESCRIPTION
-*   <<解説記入>>
+*   write to stdout
 *
 * @return count of sent byte or error code
 **/
@@ -91,9 +85,8 @@ size_t
 full_write(const void *buf, size_t count)
 {
     size_t total = 0;
-    const char *ptr = (const char *) buf;
 
-    total = fwrite(ptr, 1, count, stdout); fflush(stdout);
+    total = fwrite(buf, 1, count, stdout); fflush(stdout);
     if (total < count) {
         return feof(stdout) ? 0 : -1;
     }
