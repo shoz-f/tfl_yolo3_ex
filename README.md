@@ -1,6 +1,30 @@
 # TflYolo3
 
-**TODO: Add description**
+Tensorflow lite YOLO v3 application in Elixir
+
+## Platform
+- Windows MSYS2/MinGW64
+
+## Requirement
+It needs following libraries to build this application.
+
+Packages:
+- nlohmann/json: JSON for Modern C++
+- libjpeg
+
+You can install these packages with pacman.
+
+
+Extra libraries:
+- CImg:           http://cimg.eu/download.shtml
+- tensorflow_src: https://github.com/tensorflow/tensorflow.git
+
+There is the install script "setup_mingw_extra.sh" in ./extra.
+Please run this command line under MSYS2/MinGW.
+
+> cd ./extra<br>
+source setup_mingw_extra.sh
+
 
 ## Installation
 
