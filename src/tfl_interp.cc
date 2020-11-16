@@ -65,29 +65,14 @@ gInfo = {
 **/
 /**************************************************************************{{{*/
 ssize_t
-full_read(int fd, void *buf, size_t count)
+full_read(void *buf, size_t count)
 {
+    size_t total = 0;
     char *ptr = reinterpret_cast<char *>(buf);
 
-    size_t total = 0;
-    while (count > 0) {
-        ssize_t n;
-        do {
-            n = read(fd, buf, count);
-        } while (n < 0 && IS_EINTR(errno));
-
-        if (n < 0) {
-            //error occured
-            return n;
-        }
-        else if (n == 0) {
-            // termination: total is less than required count
-            return total;
-        }
-
-        total += n;
-        ptr += n;
-        count -= n;
+    total = fread(ptr, 1, count, stdin);
+    if (total < count) {
+        return feof(stdin) ? 0 : -1;
     }
 
     return total;
@@ -103,26 +88,14 @@ full_read(int fd, void *buf, size_t count)
 **/
 /**************************************************************************{{{*/
 size_t
-full_write(int fd, const void *buf, size_t count)
+full_write(const void *buf, size_t count)
 {
     size_t total = 0;
     const char *ptr = (const char *) buf;
 
-    while (count > 0) {
-        size_t n = write(fd, ptr, count);
-
-        if (n < 0) {
-            // error occured
-            return n;
-        }
-        else if (n == 0) {
-            // termination: total is less than required count
-            return total;
-        }
-
-        total += n;
-        ptr += n;
-        count -= n;
+    total = fwrite(ptr, 1, count, stdout); fflush(stdout);
+    if (total < count) {
+        return feof(stdout) ? 0 : -1;
     }
 
     return total;
@@ -144,7 +117,7 @@ rcv_packet_port(string& cmd_line)
 {
     // receive packet size
     char big_endian[2];
-    ssize_t n = full_read(STDIN_FILENO, big_endian, sizeof(big_endian));
+    ssize_t n = full_read(big_endian, sizeof(big_endian));
     if (n <= 0) {
         return n;
     }
@@ -156,7 +129,7 @@ rcv_packet_port(string& cmd_line)
 
     // receive packet payload
     unique_ptr<char[]> buff(new char[len]);
-    n = full_read(STDIN_FILENO, buff.get(), len);
+    n = full_read(buff.get(), len);
     if (n <= 0) {
         return n;
     }
@@ -212,7 +185,7 @@ snd_packet_port(string result)
     big_endian[1] = 0xff & (len);
     result.insert(0, big_endian, sizeof(big_endian));
 
-    return full_write(STDOUT_FILENO, result.c_str(), len+2);
+    return full_write(result.c_str(), len+2);
 }
 
 /***  Module Header  ******************************************************}}}*/
