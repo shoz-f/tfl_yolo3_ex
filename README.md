@@ -22,9 +22,9 @@ You can install these libraries by the packge manager, pacman, apt and so on.
 
 You get these libraries in source and need to build them.
 
-There is the installation script in ./extra for your convenience.
-It downloads the sources, builds them and put them in suitable directories.
-You just run following commands line depending on your OS.
+There is the installation script in ./extra for your convenience.<br>
+It downloads the sources, builds them and put them in suitable directories.<br>
+You just run following command line depending on your OS.
 
 MSYS2/MinGW64:
 
