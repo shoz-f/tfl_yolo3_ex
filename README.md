@@ -23,13 +23,13 @@ Extra libraries:
 There is the installation script in ./extra.
 Please run following commands for your OS.
 
-For MSYS2/MinGW64
-  $ cd ./extra
-  $ source setup_mingw_extra.sh
+For MSYS2/MinGW64<br>
+  $ cd ./extra<br>
+  $ source setup_mingw_extra.sh<br>
 
-For Ubuntu on WSL2
-  $ cd ./extra
-  $ source setup_wsl_extra.sh
+For Ubuntu on WSL2<br>
+  $ cd ./extra<br>
+  $ source setup_wsl_extra.sh<br>
 
 
 ## Installation
