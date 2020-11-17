@@ -9,21 +9,21 @@ Tensorflow lite YOLO v3 application in Elixir
 ## Requirement
 It needs following libraries to build this application.
 
-#### Libraries available as a package:
+#### Libraries available as a binary package:
 - libjpeg
 - nlohmann/json: JSON for Modern C++
 
 You can install these libraries by the packge manager, pacman, apt and so on.
 
 
-#### Libraries in source:
+#### Libraries in source package:
 - CImg:           http://cimg.eu/download.shtml
 - tensorflow_src: https://github.com/tensorflow/tensorflow.git
 
 You get these libraries in source and need to build them.
 
-There is the installation script in ./extra for your convenience.<br>
-It downloads the sources, builds them and put them in suitable directories.<br>
+There is the installation script in "./extra" for your convenience.<br>
+It downloads the source from internet, builds them and put them in suitable directories.<br>
 You just run following command line depending on your OS.
 
 MSYS2/MinGW64:
