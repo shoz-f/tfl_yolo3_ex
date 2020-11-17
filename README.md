@@ -1,4 +1,4 @@
-# TflYolo3
+# Tensorflow lite YOLO v3 for Elixir
 
 Tensorflow lite YOLO v3 application in Elixir
 
@@ -9,28 +9,41 @@ Tensorflow lite YOLO v3 application in Elixir
 ## Requirement
 It needs following libraries to build this application.
 
-Standard Packages:
-- nlohmann/json: JSON for Modern C++
+Libraries available as ac package:
 - libjpeg
+- nlohmann/json: JSON for Modern C++
 
-You can install these by the packager, pacman or apt.
+You can install these libraries by the packge manager, pacman, apt and so on.
 
 
-Extra libraries:
+Libraries in source:
 - CImg:           http://cimg.eu/download.shtml
 - tensorflow_src: https://github.com/tensorflow/tensorflow.git
 
-There is the installation script in ./extra.
-Please run following commands for your OS.
+You get these libraries in source and need to build them.
+There is the installation script in ./extra for your convenience.
+It downloads the sources, builds them and put them in suitable directories.
+You just run following commands line depending on your OS.
 
-For MSYS2/MinGW64<br>
-  $ cd ./extra<br>
-  $ source setup_mingw_extra.sh<br>
+MSYS2/MinGW64:
 
-For Ubuntu on WSL2<br>
-  $ cd ./extra<br>
-  $ source setup_wsl_extra.sh<br>
+```bash
+$ cd ./extra
+$ source setup_mingw_extra.sh
+```
 
+Ubuntu on WSL2:
+
+```bash
+$ cd ./extra
+$ source setup_wsl_extra.sh
+```
+
+## Where can i get YOLO v3 model for Tensorflow lite?
+You can find the "yolov3-416.tflite" on the Release page in this repository.
+Donwload it and put it into "./priv" of the project.
+
+Or you can convert the Tensorflow YOLO v3 model to tflite.
 
 ## Installation
 
@@ -44,8 +57,3 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/tfl_yolo3](https://hexdocs.pm/tfl_yolo3).
-
