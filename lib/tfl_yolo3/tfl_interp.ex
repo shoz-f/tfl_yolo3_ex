@@ -7,7 +7,6 @@ defmodule TflYolo3.TflInterp do
 
   def predict(img_file) do
     GenServer.call(__MODULE__, {:predict, img_file})
-    |> IO.inspect
   end
 
 
@@ -16,7 +15,7 @@ defmodule TflYolo3.TflInterp do
     tfl_model  = Application.app_dir(:tfl_yolo3, Keyword.get(opts, :model))
 
     port = Port.open({:spawn_executable, executable}, [
-      {:args, [tfl_model]},
+      {:args, ["-p", tfl_model]},
       {:packet, 2},
       :binary
     ])
