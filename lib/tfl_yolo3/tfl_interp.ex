@@ -16,7 +16,7 @@ defmodule TflYolo3.TflInterp do
 
     port = Port.open({:spawn_executable, executable}, [
       {:args, ["-p", tfl_model]},
-      {:packet, 2},
+      {:packet, 4},
       :binary
     ])
 

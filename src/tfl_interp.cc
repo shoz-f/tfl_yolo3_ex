@@ -46,8 +46,8 @@ SysInfo gSys = {
 **/
 /**************************************************************************{{{*/
 union Magic {
-    unsigned short S;
-    char            C[2];
+    unsigned long L;
+    char           C[4];
 };
 
 /***  Module Header  ******************************************************}}}*/
@@ -67,15 +67,15 @@ rcv_packet_port(string& cmd_line)
     try {
         // receive packet size
         Magic len;
-        cin.get(len.C[1]).get(len.C[0]);
+        cin.get(len.C[3]).get(len.C[2]).get(len.C[1]).get(len.C[0]);
 
         // receive packet payload
-        unique_ptr<char[]> buff(new char[len.S]);
-        cin.read(buff.get(), len.S);
+        unique_ptr<char[]> buff(new char[len.L]);
+        cin.read(buff.get(), len.L);
 
         // return received command line
-        cmd_line.assign(buff.get(), len.S);
-        return len.S;
+        cmd_line.assign(buff.get(), len.L);
+        return len.L;
     }
     catch(ios_base::failure) {
         return (cout.eof()) ? 0 : -1;
@@ -96,8 +96,8 @@ snd_packet_port(string result)
 {
     try {
         Magic len = { static_cast<unsigned short>(result.size()) };
-        (cout.put(len.C[1]).put(len.C[0]) << result).flush();
-        return len.S;
+        (cout.put(len.C[3]).put(len.C[3]).put(len.C[1]).put(len.C[0]) << result).flush();
+        return len.L;
     }
     catch(ios_base::failure) {
         return (cout.eof()) ? 0 : -1;
