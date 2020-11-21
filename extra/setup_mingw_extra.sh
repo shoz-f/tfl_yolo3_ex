@@ -1,13 +1,19 @@
 proj_top=`pwd`/..
 
 # setup depend packages
-if [ ! -e ./CImg_latest.zip ]
+if [ ! -e ./usr/include/CImg.h ]
 then
     wget -nc http://cimg.eu/files/CImg_latest.zip
     unzip CImg_latest.zip
     mkdir -p usr/include
     cp    CImg-*/CImg.h  usr/include
     cp -r CImg-*/plugins usr/include
+fi
+
+if [ ! -e ./usr/include/numpy.hpp ]
+then
+    git clone https://gist.github.com/rezoo/5656056
+    cp ./5656056/numpy.hpp ./usr/include
 fi
 
 # setup tensorflow lite
