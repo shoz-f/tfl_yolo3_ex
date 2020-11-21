@@ -25,9 +25,10 @@ tfl_yolo3-*.tar
 # Ignore zip files
 *.zip
 
-# Ignore backup files
+# additional ignore directories and files
+/extra/
+/debug/
 *~
 *.bak
-
-# custom libraries
-/extra/
+*.lock
+gmon.*
