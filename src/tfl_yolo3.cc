@@ -20,7 +20,6 @@ using namespace cimg_library;
 #include <string>
 #include <list>
 #include <vector>
-#include <iostream>
 #include <algorithm>
 using namespace std;
 
@@ -30,6 +29,7 @@ using json = nlohmann::json;
 #include "tensorflow/lite/interpreter.h"
 using namespace tflite;
 
+#include "tfl_interp.h"
 #include "tfl_helper.h"
 
 #include "coco.names"
@@ -47,8 +47,7 @@ public:
 
 //LIFECYCLE:
 public:
-    Box(float* scores, float box[4])
-    {
+    Box(const float* scores, const float box[4]) {
         mScore  = scores;
         mBBox[0] = box[0] - box[2]/2.0;
         mBBox[1] = box[1] - box[3]/2.0;
@@ -77,13 +76,12 @@ public:
     }
 
     // put out the scaled BBox in JSON formatting
-    json put_json(float scale_x=1.0, float scale_y=1.0) const
-    {
-        auto result = nlohmann::json::array();
-        result.push_back(int(mBBox[0] * scale_x));
-        result.push_back(int(mBBox[1] * scale_y));
-        result.push_back(int(mBBox[2] * scale_x));
-        result.push_back(int(mBBox[3] * scale_y));
+    json put_json(float scale_x=1.0, float scale_y=1.0) const {
+        auto result = json::array();
+        result.push_back(round(mBBox[0], scale_x));
+        result.push_back(round(mBBox[1], scale_y));
+        result.push_back(round(mBBox[2], scale_x));
+        result.push_back(round(mBBox[3], scale_y));
         return result;
     }
 
@@ -108,7 +106,7 @@ public:
     
 //ATTRIBUTE:
 protected:
-    float* mScore;
+    const float* mScore;
     float  mBBox[4];
     float  mArea;
 };
@@ -171,7 +169,7 @@ non_maximum_suppression(int class_id, const vector<Box>& db_candidates, float th
 **/
 /**************************************************************************{{{*/
 void
-post_yolo3(json& result, int count, float* boxes, float* scores, float scale[2], float threshold=0.25, float iou_threshold=0.5)
+post_yolo3(json& result, int count, const float* boxes, const float* scores, float scale[2], float threshold=0.25, float iou_threshold=0.5)
 {
     // leave only candidates above the threshold.
     vector<Box> db_candidates;
@@ -189,7 +187,7 @@ post_yolo3(json& result, int count, float* boxes, float* scores, float scale[2],
 
         nothing = false;
 
-        auto jboxes = nlohmann::json::array();
+        auto jboxes = json::array();
         for (const auto* box : res) {
             jboxes.push_back(box->put_json(scale[0], scale[1]));
         }
@@ -216,11 +214,14 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
         return;
     }
 /**/
+    
+    // get basename of image file
+    string base = basename(args[0], false);
 
     // setup the input tensor.
-    float* input = interpreter->typed_input_tensor<float>(0);
-    int width  = size_of_dimension(interpreter->input_tensor(0), 1);
-    int height = size_of_dimension(interpreter->input_tensor(0), 2);
+    TfLiteTensor* itensor0 = interpreter->input_tensor(0);
+    int width  = size_of_dimension(itensor0, 1);
+    int height = size_of_dimension(itensor0, 2);
     float scale[2];
 
     typedef CImg<unsigned char> CImgU8;
@@ -232,12 +233,22 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
 
         // convert the image to required format.
         auto formed_img = img.get_resize(width, height);
+        
+        DIAG_FORMED_IMG {
+            formed_img.save((base+"_formed.jpg").c_str());
+        }
 
         // put the formed image into the input tensor.
+        float* input = get_typed_tensor<float>(itensor0);
+
         cimg_forXY(formed_img, x, y) {
         cimg_forC(formed_img, c) {
             *input++ = formed_img(x, y, c)/255.0;
         }}
+        
+        DIAG_IN_OUT_TENSOR {
+            save_tensor<float>(itensor0, base+"_input.npy");
+        }
     }
     catch (...) {
         result["error"] = "fail CImg";
@@ -247,11 +258,19 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
     // predict
     if (interpreter->Invoke() == kTfLiteOk) {
         // get result
+        const TfLiteTensor* otensor0 = interpreter->output_tensor(0);
+        const TfLiteTensor* otensor1 = interpreter->output_tensor(1);
+
+        DIAG_IN_OUT_TENSOR {
+            save_tensor<float>(otensor0, base+"_output0.npy");
+            save_tensor<float>(otensor1, base+"_output1.npy");
+        }
+
         post_yolo3(
             result,
-            size_of_dimension(interpreter->output_tensor(0), 1),
-            interpreter->typed_output_tensor<float>(0),
-            interpreter->typed_output_tensor<float>(1),
+            size_of_dimension(otensor0, 1),
+            get_typed_tensor<float>(otensor0),
+            get_typed_tensor<float>(otensor1),
             scale,
             0.25,
             0.5
