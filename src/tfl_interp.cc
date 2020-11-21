@@ -10,14 +10,11 @@
 **/
 /**************************************************************************{{{*/
 
-#include <unistd.h>
 #include <iostream>
-#include <cstdio>
-#include <cerrno>
-
+#include <string>
+#include <memory>
 #include <iterator>
 #include <regex>
-#include <string>
 using namespace std;
 
 #include <getopt.h>
@@ -30,69 +27,28 @@ using json = nlohmann::json;
 #include "tensorflow/lite/model.h"
 using namespace tflite;
 
+#include "tfl_interp.h"
 #include "tfl_helper.h"
 
-/***  Class Header  *******************************************************}}}*/
+/***  Global **************************************************************}}}*/
 /**
 * system infomation
-* @par DESCRIPTION
-*   it holds system options
-*
 **/
 /**************************************************************************{{{*/
-struct {
-    string mPath;
-    string mExe;
-    string mTflModel;
-    bool  mPortMode;
-}
-gInfo = {
-    .mPortMode = true
+SysInfo gSys = {
+    .mPortMode = false,
+    .mDiag     = 0
 };
 
-/***  Module Header  ******************************************************}}}*/
+/***  Type ****************************************************************}}}*/
 /**
-* read specific sized byte from stdin
-* @par DESCRIPTION
-*   read from stdin
-*
-* @return count of received byte or error code
+* convert "unsigned short" <-> "char[2]"
 **/
 /**************************************************************************{{{*/
-ssize_t
-full_read(void *buf, size_t count)
-{
-    size_t total = 0;
-
-    total = fread(buf, 1, count, stdin);
-    if (total < count) {
-        return feof(stdin) ? 0 : -1;
-    }
-
-    return total;
-}
-
-/***  Module Header  ******************************************************}}}*/
-/**
-* write specific sized byte to stdout
-* @par DESCRIPTION
-*   write to stdout
-*
-* @return count of sent byte or error code
-**/
-/**************************************************************************{{{*/
-size_t
-full_write(const void *buf, size_t count)
-{
-    size_t total = 0;
-
-    total = fwrite(buf, 1, count, stdout); fflush(stdout);
-    if (total < count) {
-        return feof(stdout) ? 0 : -1;
-    }
-
-    return total;
-}
+union Magic {
+    unsigned short S;
+    char            C[2];
+};
 
 /***  Module Header  ******************************************************}}}*/
 /**
@@ -108,54 +64,21 @@ full_write(const void *buf, size_t count)
 ssize_t
 rcv_packet_port(string& cmd_line)
 {
-    // receive packet size
-    char big_endian[2];
-    ssize_t n = full_read(big_endian, sizeof(big_endian));
-    if (n <= 0) {
-        return n;
-    }
-    else if (n < 2) {
-        errno = ENODATA;
-        return ((ssize_t)-1);
-    }
-    unsigned short len = (unsigned short)(big_endian[0] << 8 | big_endian[1]);
+    try {
+        // receive packet size
+        Magic len;
+        cin.get(len.C[1]).get(len.C[0]);
 
-    // receive packet payload
-    unique_ptr<char[]> buff(new char[len]);
-    n = full_read(buff.get(), len);
-    if (n <= 0) {
-        return n;
-    }
-    else if (n < len) {
-        errno = ENODATA;
-        return ((ssize_t)-1);
-    }
+        // receive packet payload
+        unique_ptr<char[]> buff(new char[len.S]);
+        cin.read(buff.get(), len.S);
 
-    // return received command line
-    cmd_line.assign(buff.get(), n);
-    return n;
-}
-
-/***  Module Header  ******************************************************}}}*/
-/**
-* receive command
-* @par DESCRIPTION
-*   receive command packet and store it to "buff"
-*   gInfo.mPortMode selects receive format/ true: Erlang Port, false: std::cin
-*
-* @retval res >  0  success
-* @retval res == 0  termination
-* @retval res <  0  error
-**/
-/**************************************************************************{{{*/
-ssize_t
-rcv_packet(string& cmd_line)
-{
-    if (gInfo.mPortMode) {
-        return rcv_packet_port(cmd_line);
+        // return received command line
+        cmd_line.assign(buff.get(), len.S);
+        return len.S;
     }
-    else {
-        return (std::getline(std::cin, cmd_line)) ? cmd_line.length() : 0;
+    catch(ios_base::failure) {
+        return (cout.eof()) ? 0 : -1;
     }
 }
 
@@ -171,35 +94,58 @@ rcv_packet(string& cmd_line)
 ssize_t
 snd_packet_port(string result)
 {
-    unsigned short len = result.size();
-
-    char big_endian[2];
-    big_endian[0] = 0xff & (len >> 8);
-    big_endian[1] = 0xff & (len);
-    result.insert(0, big_endian, sizeof(big_endian));
-
-    return full_write(result.c_str(), len+2);
+    try {
+        Magic len = { static_cast<unsigned short>(result.size()) };
+        (cout.put(len.C[1]).put(len.C[0]) << result).flush();
+        return len.S;
+    }
+    catch(ios_base::failure) {
+        return (cout.eof()) ? 0 : -1;
+    }
 }
 
 /***  Module Header  ******************************************************}}}*/
 /**
-* send result packet to Elixir/Erlang
+* receive command packet from terminal
+* @par DESCRIPTION
+*   receive command packet and store it to "buff"
+*
+* @retval res >  0  success
+* @retval res == 0  termination
+* @retval res <  0  error
+**/
+/**************************************************************************{{{*/
+ssize_t
+rcv_packet_terminal(string& cmd_line)
+{
+    try {
+        cout.put('>').flush();
+        getline(std::cin, cmd_line);
+        return cmd_line.size();
+    }
+    catch(ios_base::failure) {
+        return (cout.eof()) ? 0 : -1;
+    }
+}
+
+/***  Module Header  ******************************************************}}}*/
+/**
+* send result packet to terminal
 * @par DESCRIPTION
 *   construct message packet and send it to stdout
-*   gInfo.mPortMode selects send format/ true: Erlang Port, false: std::cin
 *
 * @return count of sent byte or error code
 **/
 /**************************************************************************{{{*/
 ssize_t
-snd_packet(string result)
+snd_packet_terminal(string result)
 {
-    if (gInfo.mPortMode) {
-        return snd_packet_port(result);
-    }
-    else {
+    try {
         std::cout << result << std::endl;
-        return result.length();
+        return result.size();
+    }
+    catch(ios_base::failure) {
+        return (cout.eof()) ? 0 : -1;
     }
 }
 
@@ -233,11 +179,11 @@ parse_cmd_line(const string& cmd_line, vector<string>& args)
 **/
 /**************************************************************************{{{*/
 void
-interp(const char* tfl_name)
+interp(string& tfl_model)
 {
     // initialize tensor flow lite
     unique_ptr<tflite::FlatBufferModel> model =
-        tflite::FlatBufferModel::BuildFromFile(tfl_name);
+        tflite::FlatBufferModel::BuildFromFile(tfl_model.c_str());
 
     tflite::ops::builtin::BuiltinOpResolver resolver;
     InterpreterBuilder builder(*model, resolver);
@@ -245,12 +191,12 @@ interp(const char* tfl_name)
     builder(&interpreter);
 
     interpreter->AllocateTensors();
-    
+
     // REPL
     for (;;) {
         // receive command packet
         string cmd_line;
-        ssize_t n = rcv_packet(cmd_line);
+        ssize_t n = gSys.mRcv(cmd_line);
         if (n <= 0) {
             break;
         }
@@ -266,19 +212,37 @@ interp(const char* tfl_name)
             predict(interpreter, args, result);
         }
         else if (command == "info") {
-            result["exe"]   = gInfo.mExe;
-            result["model"] = gInfo.mTflModel;
-            result["mode"]  = gInfo.mPortMode ? "Ports" : "Terminal";
+            result["exe"]   = gSys.mExe;
+            result["model"] = gSys.mTflModel;
+            result["mode"]  = gSys.mPortMode ? "Ports" : "Terminal";
         }
         else {
             result["unknown"] = command;
         }
 
-        n = snd_packet(result.dump());
+        n = gSys.mSnd(result.dump());
         if (n <= 0) {
             break;
         }
     }
+}
+
+/***  Module Header  ******************************************************}}}*/
+/**
+* prit usage
+* @par DESCRIPTION
+*   print usage to terminal
+**/
+/**************************************************************************{{{*/
+void usage()
+{
+    cout
+      << "tfl_interp [opts] <model.tflite>\n"
+      << "\toption:\n"
+      << "\t  -p       : Elixir/Erlang Ports interface\n"
+      << "\t  -d <num> : diagnosis mode\n"
+      << "\t             1 = save the formed image\n"
+      << "\t             2 = save modle's input/output tensors\n";
 }
 
 /***  Module Header  ******************************************************}}}*/
@@ -293,36 +257,59 @@ interp(const char* tfl_name)
 int
 main(int argc, char* argv[])
 {
+    int opt, longindex;
     struct option longopts[] = {
-        { "normal", no_argument,       NULL, 'n' },
+        { "port",   no_argument,       NULL, 'p' },
+        { "debug",  required_argument, NULL, 'd' },
         { 0,        0,                 0,     0  },
     };
-    int opt, longindex;
 
-    gInfo.mPortMode = true;
-    while ((opt = getopt_long(argc, argv, "n", longopts, NULL)) != -1) {
-        switch (opt) {
-        case 'n':
-            gInfo.mPortMode = false;
+    for (;;) {
+        opt = getopt_long(argc, argv, "d:p", longopts, NULL);
+        if (opt == -1) {
+            break;
+        }
+        else switch (opt) {
+        case 'p':
+            gSys.mPortMode = true;
+            break;
+        case 'd':
+            gSys.mDiag = atoi(optarg);
             break;
         case '?':
         case ':':
+            cerr << "error: unknown options\n\n";
+            usage();
             return 1;
         }
     }
-
     if ((argc - optind) < 1) {
         // argument error
-        cerr << "expect <model file>\n";
+        cerr << "error: expect <model.tflite>\n\n";
+        usage();
         return 1;
     }
 
     // save exe infomations
-    gInfo.mExe.assign(argv[0]);
-    gInfo.mTflModel.assign(argv[optind]);
+    gSys.mExe.assign(argv[0]);
+    gSys.mTflModel.assign(argv[optind]);
 
-    interp(gInfo.mTflModel.c_str());
+    // initialize i/o
+    cin.exceptions(ios_base::badbit|ios_base::failbit|ios_base::eofbit);
+    cout.exceptions(ios_base::badbit|ios_base::failbit|ios_base::eofbit);
     
+    if (gSys.mPortMode) {
+        gSys.mRcv = rcv_packet_port;
+        gSys.mSnd = snd_packet_port;
+    }
+    else {
+        gSys.mRcv = rcv_packet_terminal;
+        gSys.mSnd = snd_packet_terminal;
+    }
+
+    // run interpreter
+    interp(gSys.mTflModel);
+
     return 0;
 }
 
