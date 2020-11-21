@@ -19,6 +19,7 @@ You can install these libraries by the packge manager, pacman, apt and so on.
 #### Libraries in source package:
 - CImg:           http://cimg.eu/download.shtml
 - tensorflow_src: https://github.com/tensorflow/tensorflow.git
+- numpy.hpp:      https://gist.github.com/rezoo/5656056
 
 You get these libraries in source and need to build them.
 
@@ -45,6 +46,28 @@ You can find the "yolov3-416.tflite" on the Release page in this repository.<br>
 Donwload it and put it into "./priv" of the project.
 
 Or, you can convert the Tensorflow YOLO v3 model to tflite also.
+
+## About tfl_interp executable
+"tfl_interp" is stand alone executable. It means that you can run "tfl_interp"
+in your terminal without Elixir. It's comand line usage is here:
+
+```
+tfl_interp [opts] <model.tflite>
+  <model.tflite>  -  Tensorflow lite model file
+  [opts]
+    -p       : switch to Elixir Ports mode from Terminal mode
+    -d <num> : diagnosis output (ableable in both teminal/ports mode)
+               num = 1 - save formed image (resized 416x416 in YOLO v3)
+                     2 - save model's input/ouput tensors (npy format)
+```
+
+In teminal mode, without "-p" option, "tfl_interp" puts a prompt sign ">" on your terminal
+and you input subcommands in it. 
+
+```
+SUBCOMMANDs:
+ 1) predict <image.jpg> - run prediction with <image.jpg>
+```
 
 ## Installation
 
