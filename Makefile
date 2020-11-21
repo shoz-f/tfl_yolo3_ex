@@ -8,6 +8,7 @@ ifeq ($(CROSSCOMPILE),)
         DEPS_HOME ?= ./extra
         LIB_EXT    = -lpthread -ldl
         TFL_GEN    = linux_x86_64
+        INC_EXT    = -I$(DEPS_HOME)/usr/include
     else
         DEPS_HOME ?= ./extra
         LIB_EXT    = -lmman
