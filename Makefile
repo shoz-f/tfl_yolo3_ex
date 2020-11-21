@@ -39,8 +39,9 @@ INCLUDE   = -I./src \
             -I$(DEPS_HOME)/tensorflow_src/tensorflow/lite/tools/make/downloads/flatbuffers/include \
             $(INC_EXT)
 DEFINES   = #-D__LITTLE_ENDIAN__ -DTFLITE_WITHOUT_XNNPACK
-CXXFLAGS += -O3 -DNDEBUG -fPIC --std=c++11 -fext-numeric-literals $(INCLUDE) $(DEFINES)
-LDFLAGS  += $(LIB_EXT) -ljpeg
+PROFILE   = #-pg
+CXXFLAGS += -O3 -DNDEBUG -fPIC --std=c++11 -fext-numeric-literals $(INCLUDE) $(DEFINES) $(PROFILE)
+LDFLAGS  += $(LIB_EXT) -ljpeg $(PROFILE)
 
 LIB_TFL = $(DEPS_HOME)/tensorflow_src/tensorflow/lite/tools/make/gen/$(TFL_GEN)/lib/libtensorflow-lite.a
 
@@ -49,8 +50,8 @@ BUILD  = $(MIX_APP_PATH)/obj
 
 #SRC=$(wildcard src/*.cc)
 #SRC=src/tfl_interp.cc src/tfl_mnist.cc
-SRC=src/tfl_interp.cc src/tfl_yolo3.cc
-OBJ=$(SRC:src/%.cc=$(BUILD)/%.o)
+SRC_CC = src/tfl_interp.cc src/tfl_yolo3.cc
+OBJ=$(SRC_CC:src/%.cc=$(BUILD)/%.o)
 
 all: $(BUILD) $(PREFIX) install
 
