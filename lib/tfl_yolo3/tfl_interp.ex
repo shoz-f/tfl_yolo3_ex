@@ -30,7 +30,7 @@ defmodule TflYolo3.TflInterp do
         {:ok, ans} = Jason.decode(response)
         if Map.has_key?(ans, "error"), do: {:error, ans["error"]}, else: {:ok, ans}
     after
-      5000 -> {:timeout}
+      10000 -> {:timeout}
     end
 
     {:reply, response, state}

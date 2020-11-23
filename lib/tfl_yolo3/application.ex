@@ -7,7 +7,7 @@ defmodule TflYolo3.Application do
 
   def start(_type, _args) do
     children = [
-      #{Plug.Cowboy, scheme: :http, plug: TflYolo3.Router, options: [port: 5000]},
+      {Plug.Cowboy, scheme: :http, plug: TflYolo3.Router, options: [port: 5000]},
       {TflYolo3.TflInterp, [model: "priv/yolov3-416.tflite"]}
     ]
 
