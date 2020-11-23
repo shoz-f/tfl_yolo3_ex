@@ -32,3 +32,5 @@ tfl_yolo3-*.tar
 *.bak
 *.lock
 gmon.*
+yolov3-416.tflite
+
