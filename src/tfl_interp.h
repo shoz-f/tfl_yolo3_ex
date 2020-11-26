@@ -20,6 +20,7 @@ struct SysInfo {
     std::string    mExe;       // path of this executable
     std::string    mTflModel;  // path of Tflite Model
     bool           mPortMode;  // Ports [true] or Terminal [false] flag
+    bool           mNormalize; // Normalize BBox predictions [true] or not
     unsigned long mDiag;      // diagnosis mode
 
     // i/o method

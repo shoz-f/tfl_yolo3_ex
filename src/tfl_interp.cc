@@ -36,8 +36,9 @@ using namespace tflite;
 **/
 /**************************************************************************{{{*/
 SysInfo gSys = {
-    .mPortMode = false,
-    .mDiag     = 0
+    .mPortMode  = false,
+    .mNormalize = false,
+    .mDiag      = 0
 };
 
 /***  Type ****************************************************************}}}*/
@@ -240,6 +241,7 @@ void usage()
       << "tfl_interp [opts] <model.tflite>\n"
       << "\toption:\n"
       << "\t  -p       : Elixir/Erlang Ports interface\n"
+      << "\t  -n       : Normalize BBox predictions by 1.0x1.0\n"
       << "\t  -d <num> : diagnosis mode\n"
       << "\t             1 = save the formed image\n"
       << "\t             2 = save modle's input/output tensors\n";
@@ -260,18 +262,22 @@ main(int argc, char* argv[])
     int opt, longindex;
     struct option longopts[] = {
         { "port",   no_argument,       NULL, 'p' },
+        { "normal", no_argument,       NULL, 'n' },
         { "debug",  required_argument, NULL, 'd' },
         { 0,        0,                 0,     0  },
     };
 
     for (;;) {
-        opt = getopt_long(argc, argv, "d:p", longopts, NULL);
+        opt = getopt_long(argc, argv, "d:np", longopts, NULL);
         if (opt == -1) {
             break;
         }
         else switch (opt) {
         case 'p':
             gSys.mPortMode = true;
+            break;
+        case 'n':
+            gSys.mNormalize = true;
             break;
         case 'd':
             gSys.mDiag = atoi(optarg);

@@ -78,10 +78,18 @@ public:
     // put out the scaled BBox in JSON formatting
     json put_json(float scale_x=1.0, float scale_y=1.0) const {
         auto result = json::array();
-        result.push_back(round(mBBox[0], scale_x));
-        result.push_back(round(mBBox[1], scale_y));
-        result.push_back(round(mBBox[2], scale_x));
-        result.push_back(round(mBBox[3], scale_y));
+        if (gSys.mNormalize) {
+            result.push_back(mBBox[0]*scale_x);
+            result.push_back(mBBox[1]*scale_y);
+            result.push_back(mBBox[2]*scale_x);
+            result.push_back(mBBox[3]*scale_y);
+        }
+        else {
+            result.push_back(round(mBBox[0], scale_x));
+            result.push_back(round(mBBox[1], scale_y));
+            result.push_back(round(mBBox[2], scale_x));
+            result.push_back(round(mBBox[3], scale_y));
+        }
         return result;
     }
 
@@ -228,8 +236,14 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
     try {
         CImgU8 img(args[0].c_str());
 
-        scale[0] = float(img.width())  / width;
-        scale[1] = float(img.height()) / height;
+        if (gSys.mNormalize) {
+            scale[0] = 1.0 / width;
+            scale[1] = 1.0 / height;
+        }
+        else {
+            scale[0] = float(img.width())  / width;
+            scale[1] = float(img.height()) / height;
+        }
 
         // convert the image to required format.
         auto formed_img = img.get_resize(width, height);
