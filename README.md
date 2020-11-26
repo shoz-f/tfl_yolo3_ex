@@ -11,10 +11,18 @@ It needs following libraries to build this application.
 
 #### Libraries available as a binary package:
 - libjpeg
+- libdl
 - nlohmann/json: JSON for Modern C++
 
 You can install these libraries by the packge manager, pacman, apt and so on.
 
+MSYS/MinGW64:
+
+```bash
+$ pacman -S mingw-w64-x86_64-libjpeg-turbo
+$ pacman -S mingw-w64-x86_64-dlfcn
+$ pacman -S mingw-w64-x86_64-nlohmann-json
+```
 
 #### Libraries in source package:
 - CImg:           http://cimg.eu/download.shtml
