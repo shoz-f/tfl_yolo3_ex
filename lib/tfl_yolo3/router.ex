@@ -30,7 +30,7 @@ defmodule TflYolo3.Router do
   post "/predict_photo" do
     with \
       :ok <- File.cp(conn.params["photo"].path, @photo_file),
-      {:ok, ans} <- TflYolo3.TflInterp.predict(@photo_file)
+      {:ok, ans} <- TflInterp.predict(@photo_file)
     do
       result_photo(ans)
       send_resp(conn, 200, Jason.encode!(%{"ans" => ans}))

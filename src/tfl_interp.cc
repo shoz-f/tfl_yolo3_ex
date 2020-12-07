@@ -200,7 +200,10 @@ interp(string& tfl_model)
     unique_ptr<Interpreter> interpreter;
     builder(&interpreter);
 
-    interpreter->AllocateTensors();
+    if (interpreter->AllocateTensors() != kTfLiteOk) {
+        cerr << "error: AllocateTensors()\n";
+        exit(1);
+    }
 
     // REPL
     for (;;) {
