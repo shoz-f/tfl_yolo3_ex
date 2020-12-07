@@ -21,6 +21,7 @@ struct SysInfo {
     std::string    mTflModel;  // path of Tflite Model
     bool           mPortMode;  // Ports [true] or Terminal [false] flag
     bool           mNormalize; // Normalize BBox predictions [true] or not
+    bool           mTiny;      // Yolo V3 tiny model
     unsigned long mDiag;      // diagnosis mode
 
     // i/o method

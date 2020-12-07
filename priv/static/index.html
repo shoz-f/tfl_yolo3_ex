@@ -8,10 +8,11 @@
     <!-- <link rel="stylesheet" href="css/app.css"> -->
   </head>
   <body>
-    <div style="width: 640px; height: 480px; overflow: auto;">
+    <div style="height: 480px; overflow: auto;">
       <img id="captured" src="/photo.jpg">
+      <img id="yolov3" src="/result.jpg">
     </div>
-    
+
     画像:<input type="file" name="photo" id="photo">
     <pre id="answer"></pre>
 
@@ -29,6 +30,7 @@
           })
           .done(function(data) {
               $("#captured").attr("src", "/photo.jpg?timestamp=" + new Date().getTime());
+              $("#yolov3").attr("src", "/result.jpg?timestamp=" + new Date().getTime());
               $("#answer").html(data)
           });
           return false;

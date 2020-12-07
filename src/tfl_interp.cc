@@ -38,6 +38,7 @@ using namespace tflite;
 SysInfo gSys = {
     .mPortMode  = false,
     .mNormalize = false,
+    .mTiny      = false,
     .mDiag      = 0
 };
 
@@ -271,12 +272,13 @@ main(int argc, char* argv[])
     struct option longopts[] = {
         { "port",   no_argument,       NULL, 'p' },
         { "normal", no_argument,       NULL, 'n' },
+        { "tiny",   no_argument,       NULL, 't' },
         { "debug",  required_argument, NULL, 'd' },
         { 0,        0,                 0,     0  },
     };
 
     for (;;) {
-        opt = getopt_long(argc, argv, "d:np", longopts, NULL);
+        opt = getopt_long(argc, argv, "d:npt", longopts, NULL);
         if (opt == -1) {
             break;
         }
@@ -286,6 +288,9 @@ main(int argc, char* argv[])
             break;
         case 'n':
             gSys.mNormalize = true;
+            break;
+        case 't':
+            gSys.mTiny = true;
             break;
         case 'd':
             gSys.mDiag = atoi(optarg);

@@ -272,8 +272,15 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
     // predict
     if (interpreter->Invoke() == kTfLiteOk) {
         // get result
-        const TfLiteTensor* otensor0 = interpreter->output_tensor(0);
-        const TfLiteTensor* otensor1 = interpreter->output_tensor(1);
+        const TfLiteTensor *otensor0, *otensor1;
+        if (gSys.mTiny) {
+            otensor0 = interpreter->output_tensor(1);
+            otensor1 = interpreter->output_tensor(0);
+        }
+        else {
+            otensor0 = interpreter->output_tensor(0);
+            otensor1 = interpreter->output_tensor(1);
+        }
 
         DIAG_IN_OUT_TENSOR {
             save_tensor<float>(otensor0, base+"_output0.npy");

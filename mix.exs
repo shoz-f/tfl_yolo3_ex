@@ -29,7 +29,8 @@ defmodule TflYolo3.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:plug_static_index_html, "~> 1.0"},
       {:jason, "~> 1.1"},
-      {:elixir_make, "~> 0.4", runtime: false},
+      {:elixir_make, "~> 0.6.2", runtime: false},
+      {:cimg, path: "../cimg"},
     ]
   end
 end

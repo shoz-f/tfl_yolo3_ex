@@ -44,6 +44,12 @@ case "${MIX_TARGET}" in
 	;;
 esac
 
+# setup other libraries
+if [ ! -e usr/include/numpy.hpp ]
+then
+    git clone https://gist.github.com/rezoo/5656056
+    cp ./5656056/numpy.hpp usr/include
+fi
 
 # setup tensorflow lite
 git clone https://github.com/tensorflow/tensorflow.git tensorflow_src
