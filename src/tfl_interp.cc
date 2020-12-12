@@ -17,8 +17,10 @@
 #include <regex>
 using namespace std;
 
+#ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
+#endif
 
 #include <getopt.h>
 
@@ -324,8 +326,10 @@ main(int argc, char* argv[])
     cout.exceptions(ios_base::badbit|ios_base::failbit|ios_base::eofbit);
     
     if (gSys.mPortMode) {
+#ifdef _WIN32
         setmode(fileno(stdin),  O_BINARY);
         setmode(fileno(stdout), O_BINARY);
+#endif
         gSys.mRcv = rcv_packet_port;
         gSys.mSnd = snd_packet_port;
     }
