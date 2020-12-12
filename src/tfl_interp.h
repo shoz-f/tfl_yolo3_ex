@@ -40,6 +40,7 @@ extern SysInfo gSys;
 #endif
 #define DIAG_FORMED_IMG      DIAG(0)
 #define DIAG_IN_OUT_TENSOR   DIAG(1)
+#define DIAG_RESULT          DIAG(2)
 
 
 #endif /* _TFL_INTERP_H */

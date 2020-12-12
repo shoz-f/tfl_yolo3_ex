@@ -186,7 +186,7 @@ post_yolo3(json& result, int count, const float* boxes, const float* scores, flo
             db_candidates.emplace_back(scores, boxes);
         }
     }
-    
+
     // run nms over each classification class.
     bool nothing = true;
     for (int class_id = 0; class_id < COCO_NAMES_MAX; class_id++) {
@@ -299,6 +299,10 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
     }
     else {
         result["error"] = "fail predict";
+    }
+    DIAG_RESULT {
+        std::ofstream save_result(base+"_result.txt");
+        save_result << result.dump();
     }
 }
 
