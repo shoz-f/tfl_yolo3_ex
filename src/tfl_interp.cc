@@ -17,6 +17,9 @@
 #include <regex>
 using namespace std;
 
+#include <fcntl.h>
+#include <io.h>
+
 #include <getopt.h>
 
 #include "nlohmann/json.hpp"
@@ -106,7 +109,7 @@ snd_packet_port(string result)
 {
     try {
         Magic len = { static_cast<unsigned long>(result.size()) };
-        (cout.put(len.C[3]).put(len.C[3]).put(len.C[1]).put(len.C[0]) << result).flush();
+        (cout.put(len.C[3]).put(len.C[2]).put(len.C[1]).put(len.C[0]) << result).flush();
         return len.L;
     }
     catch(ios_base::failure) {
@@ -321,6 +324,8 @@ main(int argc, char* argv[])
     cout.exceptions(ios_base::badbit|ios_base::failbit|ios_base::eofbit);
     
     if (gSys.mPortMode) {
+        setmode(fileno(stdin),  O_BINARY);
+        setmode(fileno(stdout), O_BINARY);
         gSys.mRcv = rcv_packet_port;
         gSys.mSnd = snd_packet_port;
     }
