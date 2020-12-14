@@ -17,6 +17,9 @@
 #include <regex>
 using namespace std;
 
+#include <chrono>
+using namespace std::chrono;
+
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -226,8 +229,13 @@ interp(string& tfl_model)
         json result;
         result.clear();
         if (command == "predict") {
+            steady_clock::time_point begin = steady_clock::now();
+
             extern void predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& result);
             predict(interpreter, args, result);
+            
+            steady_clock::time_point end = steady_clock::now();
+            milliseconds elapsed_time = duration_cast<milliseconds>(end - begin);
         }
         else if (command == "info") {
             result["exe"]   = gSys.mExe;
@@ -261,7 +269,8 @@ void usage()
       << "\t  -n       : Normalize BBox predictions by 1.0x1.0\n"
       << "\t  -d <num> : diagnosis mode\n"
       << "\t             1 = save the formed image\n"
-      << "\t             2 = save modle's input/output tensors\n";
+      << "\t             2 = save model's input/output tensors\n"
+      << "\t             4 = save result of the prediction\n";
 }
 
 /***  Module Header  ******************************************************}}}*/
