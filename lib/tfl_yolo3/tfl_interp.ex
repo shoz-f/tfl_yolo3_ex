@@ -1,12 +1,14 @@
 defmodule TflYolo3.TflInterp do
   use GenServer
   
+  @timeout 300000
+  
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   def predict(img_file) do
-    GenServer.call(__MODULE__, {:predict, img_file}, 300000)
+    GenServer.call(__MODULE__, {:predict, img_file}, @timeout)
   end
 
 
@@ -31,7 +33,7 @@ defmodule TflYolo3.TflInterp do
         {:ok, ans} = Jason.decode(response)
         if Map.has_key?(ans, "error"), do: {:error, ans["error"]}, else: {:ok, ans}
     after
-      300000 -> {:timeout}
+      @timeout -> {:timeout}
     end
 
     {:reply, response, state}
