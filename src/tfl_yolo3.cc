@@ -2,7 +2,7 @@
 /**
 * tfl_yolo3.cc
 *
-* tensor flow lite prediction
+* tensor flow lite prediction YOLO v3
 * @author	   Shozo Fukuda
 * @date	create Sun Nov 01 22:01:42 JST 2020
 * System	   MINGW64/Windows 10<br>
@@ -31,8 +31,6 @@ using namespace tflite;
 
 #include "tfl_interp.h"
 #include "tfl_helper.h"
-
-#include "coco.names"
 
 /***  Class Header  *******************************************************}}}*/
 /**
@@ -139,7 +137,7 @@ typedef list<const Box*> Boxes;
 Boxes
 non_maximum_suppression(int class_id, const vector<Box>& db_candidates, float threshold=0.25, float iou_threshold=0.5)
 {
-    // pick up box form db_candidates and make a list with it in order of score.
+    // pick up box from db_candidates and make a list with it in order of score.
     Boxes prior;
     for (const auto& box : db_candidates) {
         float my_score = box.score(class_id);
@@ -179,17 +177,19 @@ non_maximum_suppression(int class_id, const vector<Box>& db_candidates, float th
 void
 post_yolo3(json& result, int count, const float* boxes, const float* scores, float scale[2], float threshold=0.25, float iou_threshold=0.5)
 {
+    const size_t LABELS_MAX = gSys.mLabel.size();
+
     // leave only candidates above the threshold.
     vector<Box> db_candidates;
-    for (int i = 0; i < count; i++, boxes += 4, scores += COCO_NAMES_MAX) {
-        if (any_one_above(COCO_NAMES_MAX, scores, threshold)) {
+    for (int i = 0; i < count; i++, boxes += 4, scores += LABELS_MAX) {
+        if (any_one_above(LABELS_MAX, scores, threshold)) {
             db_candidates.emplace_back(scores, boxes);
         }
     }
 
     // run nms over each classification class.
     bool nothing = true;
-    for (int class_id = 0; class_id < COCO_NAMES_MAX; class_id++) {
+    for (int class_id = 0; class_id < LABELS_MAX; class_id++) {
         auto res = non_maximum_suppression(class_id, db_candidates, threshold, iou_threshold);
         if (res.empty()) { continue; }
 
@@ -199,7 +199,7 @@ post_yolo3(json& result, int count, const float* boxes, const float* scores, flo
         for (const auto* box : res) {
             jboxes.push_back(box->put_json(scale[0], scale[1]));
         }
-        result[gCocoNames[class_id]] = jboxes;
+        result[gSys.mLabel[class_id]] = jboxes;
     }
     if (nothing) {
         result["error"] = "can't find any objects";
@@ -234,8 +234,10 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
 
     typedef CImg<unsigned char> CImgU8;
     try {
+        // load target image
         CImgU8 img(args[0].c_str());
 
+        // save image sacle factor for post process
         if (gSys.mNormalize) {
             scale[0] = 1.0 / width;
             scale[1] = 1.0 / height;
@@ -257,6 +259,7 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
 
         cimg_forXY(formed_img, x, y) {
         cimg_forC(formed_img, c) {
+            // normalize the intensity of pixel and set it to the input tensor
             *input++ = formed_img(x, y, c)/255.0;
         }}
         
@@ -271,15 +274,17 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
     
     // predict
     if (interpreter->Invoke() == kTfLiteOk) {
-        // get result
+        // get result from the output tensors
         const TfLiteTensor *otensor0, *otensor1;
         if (gSys.mTiny) {
-            otensor0 = interpreter->output_tensor(1);
-            otensor1 = interpreter->output_tensor(0);
+            // tiny model results
+            otensor0 = interpreter->output_tensor(1);   // BBOX
+            otensor1 = interpreter->output_tensor(0);   // score each COCOs
         }
         else {
-            otensor0 = interpreter->output_tensor(0);
-            otensor1 = interpreter->output_tensor(1);
+            // full model results
+            otensor0 = interpreter->output_tensor(0);   // BBOX
+            otensor1 = interpreter->output_tensor(1);   // score each COCOs
         }
 
         DIAG_IN_OUT_TENSOR {
@@ -287,6 +292,7 @@ predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& 
             save_tensor<float>(otensor1, base+"_output1.npy");
         }
 
+        // do post processing
         post_yolo3(
             result,
             size_of_dimension(otensor0, 1),

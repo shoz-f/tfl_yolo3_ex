@@ -15,6 +15,7 @@
 #include <memory>
 #include <iterator>
 #include <regex>
+#include <vector>
 using namespace std;
 
 #include <chrono>
@@ -64,7 +65,7 @@ union Magic {
 /**
 * receive command packet from Elixir/Erlang
 * @par DESCRIPTION
-*   receive command packet and store it to "buff"
+*   receive command packet and store it to "cmd_line"
 *
 * @retval res >  0  success
 * @retval res == 0  termination
@@ -126,7 +127,7 @@ snd_packet_port(string result)
 /**
 * receive command packet from terminal
 * @par DESCRIPTION
-*   receive command packet and store it to "buff"
+*   receive command packet and store it to "cmd_line"
 *
 * @retval res >  0  success
 * @retval res == 0  termination
@@ -171,7 +172,7 @@ snd_packet_terminal(string result)
 /**
 * parse command line string
 * @par DESCRIPTION
-*   extract command & arguments string from string
+*   extract command & arguments strings from "cmd_line"
 *
 * @retval command string & vector of arguments
 **/
@@ -197,9 +198,9 @@ parse_cmd_line(const string& cmd_line, vector<string>& args)
 **/
 /**************************************************************************{{{*/
 void
-interp(string& tfl_model)
+interp(string& tfl_model, string& tfl_label)
 {
-    // initialize tensor flow lite
+    // load tensor flow lite model
     unique_ptr<tflite::FlatBufferModel> model =
         tflite::FlatBufferModel::BuildFromFile(tfl_model.c_str());
 
@@ -211,6 +212,17 @@ interp(string& tfl_model)
     if (interpreter->AllocateTensors() != kTfLiteOk) {
         cerr << "error: AllocateTensors()\n";
         exit(1);
+    }
+
+    // load labels
+    string   label;
+    ifstream lb_file(tfl_label);
+    if (lb_file.fail()) {
+        cerr << "error: Failed to open file\n";
+        exit(1);
+    }
+    while (getline(lb_file, label)) {
+        gSys.mLabel.emplace_back(label);
     }
 
     // REPL
@@ -226,6 +238,7 @@ interp(string& tfl_model)
         vector<string> args;
         const string command = parse_cmd_line(cmd_line, args);
 
+        // command branch
         json result;
         result.clear();
         if (command == "predict") {
@@ -233,7 +246,7 @@ interp(string& tfl_model)
 
             extern void predict(unique_ptr<Interpreter>& interpreter, const vector<string>& args, json& result);
             predict(interpreter, args, result);
-            
+
             steady_clock::time_point end = steady_clock::now();
             milliseconds elapsed_time = duration_cast<milliseconds>(end - begin);
         }
@@ -242,10 +255,13 @@ interp(string& tfl_model)
             result["model"] = gSys.mTflModel;
             result["mode"]  = gSys.mPortMode ? "Ports" : "Terminal";
         }
+        else if (command == "label") {
+        }
         else {
             result["unknown"] = command;
         }
 
+        // send the result in JSON string
         n = gSys.mSnd(result.dump());
         if (n <= 0) {
             break;
@@ -263,7 +279,7 @@ interp(string& tfl_model)
 void usage()
 {
     cout
-      << "tfl_interp [opts] <model.tflite>\n"
+      << "tfl_interp [opts] <model.tflite> <class.label>\n"
       << "\toption:\n"
       << "\t  -p       : Elixir/Erlang Ports interface\n"
       << "\t  -n       : Normalize BBox predictions by 1.0x1.0\n"
@@ -329,6 +345,7 @@ main(int argc, char* argv[])
     // save exe infomations
     gSys.mExe.assign(argv[0]);
     gSys.mTflModel.assign(argv[optind]);
+    gSys.mTflLabel.assign(argv[optind+1]);
 
     // initialize i/o
     cin.exceptions(ios_base::badbit|ios_base::failbit|ios_base::eofbit);
@@ -348,7 +365,7 @@ main(int argc, char* argv[])
     }
 
     // run interpreter
-    interp(gSys.mTflModel);
+    interp(gSys.mTflModel, gSys.mTflLabel);
 
     return 0;
 }

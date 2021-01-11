@@ -1,7 +1,7 @@
 defmodule TflYolo3.Router do
   use Plug.Router
   
-  alias TflYolo3.TflInterp
+  alias TflInterp
 
   @photo_file  if Mix.target() == :host, do: Application.app_dir(:tfl_yolo3, "priv/photo.jpg"), else: "/root/photo.jpg"
   @result_file if Mix.target() == :host, do: Application.app_dir(:tfl_yolo3, "priv/result.jpg"), else: "/root/result.jpg"
@@ -29,6 +29,10 @@ defmodule TflYolo3.Router do
       IO.inspect(ans)
       send_resp(conn, 200, Jason.encode!(%{"ans" => ans}))
     else
+      {:timeout} ->
+        send_resp(conn, 200, "tiemout")
+      {:error, error} ->
+        send_resp(conn, 200, error)
       _ ->
         send_resp(conn, 200, "error")
     end
