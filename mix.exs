@@ -30,7 +30,8 @@ defmodule TflYolo3.MixProject do
       {:plug_static_index_html, "~> 1.0"},
       {:jason, "~> 1.1"},
       {:elixir_make, "~> 0.6.2", runtime: false},
-      {:cimg, git: "https://github.com/shoz-f/cimg_ex.git", tag: "0.1.0"},
+      {:cimg, git: "https://github.com/shoz-f/cimg_ex.git"},
+      {:npy, git: "https://github.com/shoz-f/npy_ex.git"}
     ]
   end
 end
