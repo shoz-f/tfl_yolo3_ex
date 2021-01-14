@@ -15,4 +15,8 @@ defmodule TflYolo3 do
   def hello do
     :world
   end
+  
+  def preprocess(fname) do
+    struct(Npy, CImg.create(fname) |> CImg.resize([416,416]) |> CImg.to_flatbin)
+  end
 end
